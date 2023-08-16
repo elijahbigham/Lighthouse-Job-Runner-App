@@ -5,6 +5,7 @@ import minimist from "minimist";
 import { parseString } from "xml2js";
 import { format } from "date-fns";
 import os from "os";
+import { parse } from "path";
 
 async function isLighthouseInstalled() {
   return new Promise((resolve, reject) => {
@@ -15,7 +16,7 @@ async function isLighthouseInstalled() {
       resolve(code === 0);
     });
   });
-}x
+}
 
 async function runLighthouse(url, flags = []) {
   return new Promise((resolve, reject) => {
@@ -41,20 +42,12 @@ async function runLighthouse(url, flags = []) {
     });
   });
 }
-
-async function main() {
-
-  const lighthouseIsInstalled = await isLighthouseInstalled();
-  if (!lighthouseIsInstalled) {
-    console.error("The Lighthouse package does not seem to be installed. Please run \"npm i --location=global lighthouse\" to install it globally");
-    return;
-  }
-
+function parseArgs() {
   const args = minimist(process.argv.slice(2));
   let urls = [];
 
   if (args.f || args.file) {
-    const filename = args.f || args.file;
+     const filename = args.f || args.file;
    try {
      const fileContent = fs.readFileSync(filename, "utf8");
  
@@ -85,21 +78,34 @@ async function main() {
     console.error("Usage: node script.js [-f <file>] <url1> <url2> ...");
     return;
   }
+  return urls
+}
+async function createDirectory() {
+  return new Promise((resolve, reject) => {
+    const currentDate = new Date();
+    const directoryName = `lighthouse-audit_${format(currentDate, "yyyy-MM-dd'T'HHmmssXXX")}`;
+    try {
+      fs.mkdirSync(directoryName)
+      resolve(directoryName);
+     } catch (error) {
+       reject( error);
+     }
+  });
+}
 
-  // Create a directory using the current date-time in ISO 8601 format
-  const currentDate = new Date();
-  const directoryName = `lighthouse-audit_${format(currentDate, "yyyy-MM-dd'T'HHmmssXXX")}`;
-  
-  try {
-    fs.mkdirSync(directoryName);
-  } catch (error) {
-    console.error(`Error creating directory ${directoryName}:`, error);
+async function main() {
+
+  //check for lighthouse installation
+  const lighthouseIsInstalled = await isLighthouseInstalled();
+  if (!lighthouseIsInstalled) {
+    console.error("The Lighthouse package does not seem to be installed. Please run \"npm i --location=global lighthouse\" to install it globally");
     return;
   }
+  let urls = parseArgs();
 
+  const directoryName = await createDirectory();
   // Set the directory as the working directory
   process.chdir(directoryName);
-
 
   //create CSV Summary for Mobile
   const csvWriterMobile = createObjectCsvWriter({
@@ -138,8 +144,6 @@ async function main() {
 
       // Run Lighthouse with "--preset desktop" flag
       const reportDesktop = await runLighthouse(url, ["--preset", "desktop"]);
-
-            
 
       // Save the reports as JSON files
       const filenameMobile = 
@@ -194,7 +198,7 @@ async function main() {
       }
 
       csvWriterDesktop
-        .writeRecords([mobileSummary])
+        .writeRecords([desktopSummary])
         .then(() =>
           console.log(
             `${url} CSV Summary (Desktop) written`
