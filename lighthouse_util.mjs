@@ -7,11 +7,8 @@ import { format } from "date-fns";
 
 async function runLighthouse(url, flags = []) {
   return new Promise((resolve, reject) => {
-    const lighthouseProcess = spawn("lighthouse", [
-      url,
-      ...flags,
-      "--output=json",
-    ]);
+    const lighthouseProcess = spawn("lighthouse", [url,...flags, "--output=json", 
+    "--chrome-flags=\"--headless --disable-gpu\""]);
 
     let lighthouseOutput = "";
     lighthouseProcess.stdout.on("data", (data) => {
@@ -85,12 +82,32 @@ async function main() {
   process.chdir(directoryName);
 
 
-  const csvWriter = createObjectCsvWriter({
+  //create CSV Summary for Mobile
+  const csvWriterMobile = createObjectCsvWriter({
     path: "lighthouse-scores.csv",
     header: [
       { id: "url", title: "URL" },
-      { id: "score_mobile", title: "Mobile Score" },
-      { id: "score_desktop", title: "Desktop Score" },
+      { id: "score_performance", title: "Performance Score" },
+      { id: "score_accessibility", title: "Accessibility Score" },
+      { id: "score_best_practices", title: "Best Practices Score" },
+      { id: "score_seo", title: "SEO Score" },
+      { id: "score_pwa", title: "PWA Score" },
+      
+    ],
+    append: true,
+  });
+
+  //create CSV Summary for Desktop
+  const csvWriterDesktop = createObjectCsvWriter({
+    path: "lighthouse-scores-desktop.csv",
+    header: [
+      { id: "url", title: "URL" },
+      { id: "score_performance", title: "Performance Score" },
+      { id: "score_accessibility", title: "Accessibility Score" },
+      { id: "score_best_practices", title: "Best Practices Score" },
+      { id: "score_seo", title: "SEO Score" },
+      { id: "score_pwa", title: "PWA Score" },
+      
     ],
     append: true,
   });
@@ -103,31 +120,65 @@ async function main() {
       // Run Lighthouse with "--preset desktop" flag
       const reportDesktop = await runLighthouse(url, ["--preset", "desktop"]);
 
-      const scoreMobile = reportMobile.categories.performance.score * 100;
-      const scoreDesktop = reportDesktop.categories.performance.score * 100;
+            
 
       // Save the reports as JSON files
-      const filenameMobile = `${url.replace(/[^a-zA-Z0-9]/g, "_")}_mobile.json`;
-      const filenameDesktop = `${url.replace(
-        /[^a-zA-Z0-9]/g,
-        "_"
-      )}_desktop.json`;
+      const filenameMobile = 
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_mobile.json`;
+      const filenameDesktop = 
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_desktop.json`;
 
       fs.writeFileSync(filenameMobile, JSON.stringify(reportMobile, null, 2));
       fs.writeFileSync(filenameDesktop, JSON.stringify(reportDesktop, null, 2));
+      console.log(`Reports for ${url} written to JSON files`)
+
+      //extract summary scores (mobile)
+      const scorePerformanceMobile = reportMobile.categories.performance.score * 100;
+      const scoreAccessibilityMobile = reportMobile.categories.accessibility.score * 100
+      const scoreBestPracticesMobile = reportMobile.categories["best-practices"].score * 100
+      const scoreSEOMobile =  reportMobile.categories.seo.score * 100
+      const scorePWAMobile = reportMobile.categories.pwa.score * 100
 
       // Write scores to CSV
-      const record = {
+      const mobileSummary = {
         url: url,
-        score_mobile: scoreMobile,
-        score_desktop: scoreDesktop,
+        score_performance: scorePerformanceMobile,
+        score_accessibility: scoreAccessibilityMobile,
+        score_best_practices: scoreBestPracticesMobile,
+        score_seo: scoreSEOMobile,
+        score_pwa: scorePWAMobile,
       };
 
-      csvWriter
-        .writeRecords([record])
+      csvWriterMobile
+        .writeRecords([mobileSummary])
         .then(() =>
           console.log(
-            `Scores and reports for ${url} written to CSV and JSON files`
+            `${url} CSV Summary (Mobile) written`
+          )
+        )
+        .catch((error) => console.error(error));
+
+      //extract summary scores (desktop)
+      const scorePerformanceDesktop = reportDesktop.categories.performance.score * 100;
+      const scoreAccessibilityDesktop = reportDesktop.categories.accessibility.score * 100
+      const scoreBestPracticesDesktop = reportDesktop.categories["best-practices"].score * 100
+      const scoreSEODesktop =  reportDesktop.categories.seo.score * 100
+      const scorePWADesktop = reportDesktop.categories.pwa.score * 100
+
+      const desktopSummary = {
+        url: url,
+        score_performance: scorePerformanceDesktop,
+        score_accessibility: scoreAccessibilityDesktop,
+        score_best_practices: scoreBestPracticesDesktop,
+        score_seo: scoreSEODesktop,
+        score_pwa: scorePWADesktop,
+      }
+
+      csvWriterDesktop
+        .writeRecords([mobileSummary])
+        .then(() =>
+          console.log(
+            `${url} CSV Summary (Desktop) written`
           )
         )
         .catch((error) => console.error(error));
