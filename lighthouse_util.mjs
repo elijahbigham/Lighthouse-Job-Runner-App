@@ -1,17 +1,19 @@
 import * as fs from 'fs';
 import { createObjectCsvWriter } from 'csv-writer';
 import { spawn } from 'child_process';
+import minimist from 'minimist';
 
 async function runLighthouse(url, flags = []) {
   return new Promise((resolve, reject) => {
     const lighthouseProcess = spawn('lighthouse', [url, ...flags, '--output=json']);
 
     let lighthouseOutput = '';
-    lighthouseProcess.stdout.on('data', (data) => {
+    lighthouseProcess.stdout.on('data', (data) => { 
       lighthouseOutput += data.toString();
     });
 
     lighthouseProcess.on('close', (code) => {
+      console.log(lighthouseOutput)
       if (code === 0) {
         try {
           const report = JSON.parse(lighthouseOutput);
@@ -27,10 +29,22 @@ async function runLighthouse(url, flags = []) {
 }
 
 async function main() {
-  const urls = [
-    "https://www.digitizeyourdocuments.com/case-studies/",
-    "https://www.digitizeyourdocuments.com/document-imaging/falcon/",
-  ];
+  const args = minimist(process.argv.slice(2));
+  let urls = [];
+
+
+  if (args.f || args.file) {
+    const filename = args.f || args.file;
+    const fileContent = fs.readFileSync(filename, 'utf8');
+    urls = fileContent.split('\n').map((url) => url.trim());
+  } else {
+    urls = args._; // URLs provided directly as positional arguments
+  }
+
+  if (urls.length === 0) {
+    console.error('Usage: node script.js [-f <file>] <url1> <url2> ...');
+    return;
+  }
 
   const csvWriter = createObjectCsvWriter({
     path: "lighthouse-scores.csv",
