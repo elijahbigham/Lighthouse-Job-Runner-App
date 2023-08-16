@@ -1,11 +1,12 @@
 {
-  "dependencies": {
-    "child-process": "^1.0.2",
-    "csv-writer": "^1.6.0",
-    "lighthouse": "^11.0.0",
-    "minimist": "^1.2.8",
-    "puppeteer": "^21.0.3",
-    "xml2js": "^0.6.2"
-  },
-  "type": "module"
+    "dependencies": {
+        "child-process": "^1.0.2",
+        "csv-writer": "^1.6.0",
+        "date-fns": "^2.30.0",
+        "lighthouse": "^11.0.0",
+        "minimist": "^1.2.8",
+        "puppeteer": "^21.0.3",
+        "xml2js": "^0.6.2"
+    },
+    "type": "module"
 }

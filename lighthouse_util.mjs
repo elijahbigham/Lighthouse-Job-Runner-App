@@ -3,6 +3,7 @@ import { createObjectCsvWriter } from "csv-writer";
 import { spawn } from "child_process";
 import minimist from "minimist";
 import { parseString } from "xml2js";
+import { format } from "date-fns";
 
 async function runLighthouse(url, flags = []) {
   return new Promise((resolve, reject) => {
@@ -69,6 +70,21 @@ async function main() {
     return;
   }
 
+  // Create a directory using the current date-time in ISO 8601 format
+  const currentDate = new Date();
+  const directoryName = `lighthouse-audit_${format(currentDate, "yyyy-MM-dd'T'HHmmssXXX")}`;
+  
+  try {
+    fs.mkdirSync(directoryName);
+  } catch (error) {
+    console.error(`Error creating directory ${directoryName}:`, error);
+    return;
+  }
+
+  // Set the directory as the working directory
+  process.chdir(directoryName);
+
+
   const csvWriter = createObjectCsvWriter({
     path: "lighthouse-scores.csv",
     header: [
@@ -119,6 +135,10 @@ async function main() {
       console.error(`Error running Lighthouse for ${url}:`, error);
     }
   }
+
+  // Restore the original working directory
+  process.chdir("..");
 }
+
 
 main();
