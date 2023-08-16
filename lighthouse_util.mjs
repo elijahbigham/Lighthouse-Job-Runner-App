@@ -13,7 +13,6 @@ async function runLighthouse(url, flags = []) {
     });
 
     lighthouseProcess.on('close', (code) => {
-      console.log(lighthouseOutput)
       if (code === 0) {
         try {
           const report = JSON.parse(lighthouseOutput);
