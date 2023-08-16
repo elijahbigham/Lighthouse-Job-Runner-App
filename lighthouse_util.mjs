@@ -4,6 +4,18 @@ import { spawn } from "child_process";
 import minimist from "minimist";
 import { parseString } from "xml2js";
 import { format } from "date-fns";
+import os from "os";
+
+async function isLighthouseInstalled() {
+  return new Promise((resolve, reject) => {
+    const lighthouseCommand = os.platform() === "win32" ? "where" : "which";
+    const lighthouseProcess = spawn(lighthouseCommand, ["lighthouse"]);
+
+    lighthouseProcess.on("close", (code) => {
+      resolve(code === 0);
+    });
+  });
+}x
 
 async function runLighthouse(url, flags = []) {
   return new Promise((resolve, reject) => {
@@ -31,6 +43,13 @@ async function runLighthouse(url, flags = []) {
 }
 
 async function main() {
+
+  const lighthouseIsInstalled = await isLighthouseInstalled();
+  if (!lighthouseIsInstalled) {
+    console.error("The Lighthouse package does not seem to be installed. Please run \"npm i --location=global lighthouse\" to install it globally");
+    return;
+  }
+
   const args = minimist(process.argv.slice(2));
   let urls = [];
 
