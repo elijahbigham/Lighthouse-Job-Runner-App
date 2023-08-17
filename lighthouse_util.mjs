@@ -5,7 +5,6 @@ import minimist from "minimist";
 import { parseString } from "xml2js";
 import { format } from "date-fns";
 import os from "os";
-import { parse } from "path";
 
 async function isLighthouseInstalled() {
   return new Promise((resolve, reject) => {
@@ -170,8 +169,6 @@ async function main() {
 
       fs.writeFileSync(filenameMobile, JSON.stringify(reportJSONMobile, null, 2));
       fs.writeFileSync(filenameDesktop, JSON.stringify(reportJSONDesktop, null, 2));
-      console.log(`Reports for ${url} written to JSON files`)
-
 
       // Save the reports as HTML files
       filenameMobile = 
@@ -186,10 +183,6 @@ async function main() {
       // Run Lighthouse with "--preset desktop" flag
       await runLighthouseHTML(url, filenameDesktop, ["--preset desktop"]);
 
-      
-      //fs.writeFileSync(filenameMobile, reportHTMLMobile);
-      //fs.writeFileSync(filenameDesktop, reportHTMLDesktop);
-      console.log(`Reports for ${url} written to HTML files`)
 
       //extract summary scores (mobile)
       const scorePerformanceMobile = reportJSONMobile.categories.performance.score * 100;
