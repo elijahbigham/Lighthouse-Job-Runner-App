@@ -18,7 +18,7 @@ async function isLighthouseInstalled() {
   });
 }
 
-async function runLighthouse(url, flags = []) {
+async function runLighthouseJSON(url, flags = []) {
   return new Promise((resolve, reject) => {
     const lighthouseProcess = spawn("lighthouse", [url,...flags, "--output=json", 
     "--chrome-flags=\"--headless --disable-gpu\""]);
@@ -36,6 +36,23 @@ async function runLighthouse(url, flags = []) {
         } catch (error) {
           reject(error);
         }
+      } else {
+        reject(new Error(`Lighthouse process exited with code ${code}`));
+      }
+    });
+  });
+}
+async function runLighthouseHTML(url, outputPath, flags = []) {
+  return new Promise((resolve, reject) => {
+    const lighthouseProcess = spawn("lighthouse", [url,...flags, 
+      "--output=html", 
+      "--output-path=" + outputPath,
+      "--chrome-flags=\"--headless --disable-gpu\""]);
+
+
+    lighthouseProcess.on("close", (code) => {
+      if (code === 0) {
+        resolve(outputPath);
       } else {
         reject(new Error(`Lighthouse process exited with code ${code}`));
       }
@@ -139,28 +156,47 @@ async function main() {
 
   for (const url of urls) {
     try {
-      // Run Lighthouse with default settings
-      const reportMobile = await runLighthouse(url);
+      // Run Lighthouse for JSON with default settings
+      const reportJSONMobile = await runLighthouseJSON(url);
 
-      // Run Lighthouse with "--preset desktop" flag
-      const reportDesktop = await runLighthouse(url, ["--preset", "desktop"]);
+      // Run Lighthouse for JSON with "--preset desktop" flag
+      const reportJSONDesktop = await runLighthouseJSON(url, ["--preset desktop"]);
 
       // Save the reports as JSON files
-      const filenameMobile = 
+      var filenameMobile = 
         `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_mobile.json`;
-      const filenameDesktop = 
+      var filenameDesktop = 
         `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_desktop.json`;
 
-      fs.writeFileSync(filenameMobile, JSON.stringify(reportMobile, null, 2));
-      fs.writeFileSync(filenameDesktop, JSON.stringify(reportDesktop, null, 2));
+      fs.writeFileSync(filenameMobile, JSON.stringify(reportJSONMobile, null, 2));
+      fs.writeFileSync(filenameDesktop, JSON.stringify(reportJSONDesktop, null, 2));
       console.log(`Reports for ${url} written to JSON files`)
 
+
+      // Save the reports as HTML files
+      filenameMobile = 
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_mobile.html`;
+      filenameDesktop = 
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_desktop.html`;
+
+
+      // Run Lighthouse with default settings
+      await runLighthouseHTML(url, filenameMobile);
+
+      // Run Lighthouse with "--preset desktop" flag
+      await runLighthouseHTML(url, filenameDesktop, ["--preset desktop"]);
+
+      
+      //fs.writeFileSync(filenameMobile, reportHTMLMobile);
+      //fs.writeFileSync(filenameDesktop, reportHTMLDesktop);
+      console.log(`Reports for ${url} written to HTML files`)
+
       //extract summary scores (mobile)
-      const scorePerformanceMobile = reportMobile.categories.performance.score * 100;
-      const scoreAccessibilityMobile = reportMobile.categories.accessibility.score * 100
-      const scoreBestPracticesMobile = reportMobile.categories["best-practices"].score * 100
-      const scoreSEOMobile =  reportMobile.categories.seo.score * 100
-      const scorePWAMobile = reportMobile.categories.pwa.score * 100
+      const scorePerformanceMobile = reportJSONMobile.categories.performance.score * 100;
+      const scoreAccessibilityMobile = reportJSONMobile.categories.accessibility.score * 100
+      const scoreBestPracticesMobile = reportJSONMobile.categories["best-practices"].score * 100
+      const scoreSEOMobile =  reportJSONMobile.categories.seo.score * 100
+      const scorePWAMobile = reportJSONMobile.categories.pwa.score * 100
 
       // Write scores to CSV
       const mobileSummary = {
@@ -182,11 +218,11 @@ async function main() {
         .catch((error) => console.error(error));
 
       //extract summary scores (desktop)
-      const scorePerformanceDesktop = reportDesktop.categories.performance.score * 100;
-      const scoreAccessibilityDesktop = reportDesktop.categories.accessibility.score * 100
-      const scoreBestPracticesDesktop = reportDesktop.categories["best-practices"].score * 100
-      const scoreSEODesktop =  reportDesktop.categories.seo.score * 100
-      const scorePWADesktop = reportDesktop.categories.pwa.score * 100
+      const scorePerformanceDesktop = reportJSONDesktop.categories.performance.score * 100;
+      const scoreAccessibilityDesktop = reportJSONDesktop.categories.accessibility.score * 100
+      const scoreBestPracticesDesktop = reportJSONDesktop.categories["best-practices"].score * 100
+      const scoreSEODesktop =  reportJSONDesktop.categories.seo.score * 100
+      const scorePWADesktop = reportJSONDesktop.categories.pwa.score * 100
 
       const desktopSummary = {
         url: url,
