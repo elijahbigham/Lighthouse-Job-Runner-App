@@ -164,9 +164,9 @@ async function main() {
 
       // Save the reports as JSON files
       var filenameMobile = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_mobile.json`;
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.json`;
       var filenameDesktop = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_desktop.json`;
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.json`;
 
       fs.writeFileSync(filenameMobile, JSON.stringify(reportJSONMobile, null, 2));
       fs.writeFileSync(filenameDesktop, JSON.stringify(reportJSONDesktop, null, 2));
@@ -175,9 +175,9 @@ async function main() {
 
       // Save the reports as HTML files
       filenameMobile = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_mobile.html`;
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.html`;
       filenameDesktop = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}_desktop.html`;
+        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
 
 
       // Run Lighthouse with default settings
