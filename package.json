@@ -1,34 +1,13 @@
 {
-  "dependencies": {
-    "child-process": "^1.0.2",
-    "csv-writer": "^1.6.0",
-    "date-fns": "^2.30.0",
-    "lighthouse": "^11.0.0",
-    "minimist": "^1.2.8",
-    "os": "^0.1.2",
-    "puppeteer": "^21.0.3",
-    "xml2js": "^0.6.2"
-  },
-  "type": "module",
-  "name": "batch-lighthouse-app",
-  "version": "1.0.0",
-  "description": "Iteratively runs lighthouse commands to create HTML and JSON records for each page, as well as a CSV summary, for both desktop and mobile",
-  "main": "index.js",
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/elijahbigham/Lighthouse-Job-Runner-App.git"
-  },
-  "keywords": [
-    "lighthouse"
-  ],
-  "author": "Elijah Bigham",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/elijahbigham/Lighthouse-Job-Runner-App/issues"
-  },
-  "homepage": "https://github.com/elijahbigham/Lighthouse-Job-Runner-App#readme"
+    "dependencies": {
+        "child-process": "^1.0.2",
+        "csv-writer": "^1.6.0",
+        "date-fns": "^2.30.0",
+        "lighthouse": "^11.0.0",
+        "minimist": "^1.2.8",
+        "os": "^0.1.2",
+        "puppeteer": "^21.0.3",
+        "xml2js": "^0.6.2"
+    },
+    "type": "module"
 }
