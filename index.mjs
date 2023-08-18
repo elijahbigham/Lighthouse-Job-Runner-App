@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import * as fs from "fs";
 import { createObjectCsvWriter } from "csv-writer";
 import { spawn } from "child_process";

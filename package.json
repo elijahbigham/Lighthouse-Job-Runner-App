@@ -11,9 +11,13 @@
   },
   "type": "module",
   "name": "batch-lighthouse-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Iteratively runs lighthouse commands to create HTML and JSON records for each page, as well as a CSV summary, for both desktop and mobile",
   "main": "index.js",
+  "bin": {
+    "lighthouse-batch-app": "index.mjs"
+  }
+  ,
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
