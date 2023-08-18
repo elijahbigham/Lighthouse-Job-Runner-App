@@ -11,7 +11,7 @@
   },
   "type": "module",
   "name": "lighthouse-batch-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Iteratively runs lighthouse commands to create HTML and JSON records for each page, as well as a CSV summary, for both desktop and mobile",
   "main": "index.js",
   "bin": {
