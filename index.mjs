@@ -101,7 +101,7 @@ function parseArgs() {
 async function createDirectory() {
   return new Promise((resolve, reject) => {
     const currentDate = new Date();
-    const directoryName = `lighthouse-audit_${format(currentDate, "yyyy-MM-dd'T'HHmmssXXX")}`;
+    const directoryName = `lighthouse-audit`;
     try {
       fs.mkdirSync(directoryName)
       resolve(directoryName);
@@ -137,7 +137,6 @@ async function main() {
       { id: "score_pwa", title: "PWA Score" },
       
     ],
-    append: true,
   });
 
   //create CSV Summary for Desktop
@@ -154,6 +153,8 @@ async function main() {
     ],
     append: true,
   });
+  var mobileSummary = [];
+  var desktopSummary = [];
 
   for (const url of urls) {
     try {
@@ -174,9 +175,9 @@ async function main() {
 
       // Save the reports as HTML files
       filenameMobile = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.html`;
+        `${url.toLowerCase().replace("https://", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.html`;
       filenameDesktop = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
+        `${url.toLowerCase().replace("https://.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
 
 
       // Run Lighthouse with default settings
@@ -194,7 +195,7 @@ async function main() {
       const scorePWAMobile = reportJSONMobile.categories.pwa.score * 100
 
       // Write scores to CSV
-      const mobileSummary = {
+      const mobileSummaryRecord = {
         url: url,
         score_performance: scorePerformanceMobile,
         score_accessibility: scoreAccessibilityMobile,
@@ -202,15 +203,8 @@ async function main() {
         score_seo: scoreSEOMobile,
         score_pwa: scorePWAMobile,
       };
-
-      csvWriterMobile
-        .writeRecords([mobileSummary])
-        .then(() =>
-          console.log(
-            `${url} CSV Summary (Mobile) written`
-          )
-        )
-        .catch((error) => console.error(error));
+      mobileSummary.push(mobileSummaryRecord);
+      
 
       //extract summary scores (desktop)
       const scorePerformanceDesktop = reportJSONDesktop.categories.performance.score * 100;
@@ -219,7 +213,7 @@ async function main() {
       const scoreSEODesktop =  reportJSONDesktop.categories.seo.score * 100
       const scorePWADesktop = reportJSONDesktop.categories.pwa.score * 100
 
-      const desktopSummary = {
+      const desktopSummaryRecord = {
         url: url,
         score_performance: scorePerformanceDesktop,
         score_accessibility: scoreAccessibilityDesktop,
@@ -227,20 +221,24 @@ async function main() {
         score_seo: scoreSEODesktop,
         score_pwa: scorePWADesktop,
       }
+      desktopSummary.push(desktopSummaryRecord);
 
-      csvWriterDesktop
-        .writeRecords([desktopSummary])
-        .then(() =>
-          console.log(
-            `${url} CSV Summary (Desktop) written`
-          )
-        )
-        .catch((error) => console.error(error));
+      
     } catch (error) {
       console.error(`Error running Lighthouse for ${url}:`, error);
     }
+    console.log(
+      `${url} Audit Complete`
+    )
   }
 
+  csvWriterMobile
+        .writeRecords(mobileSummary)
+        .catch((error) => console.error(error));
+  csvWriterDesktop
+        .writeRecords(desktopSummary)
+        .catch((error) => console.error(error));
+  console.log("Lighthouse audit complete for all URLs")
   // Restore the original working directory
   process.chdir("..");
 }
