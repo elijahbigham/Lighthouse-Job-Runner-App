@@ -101,7 +101,7 @@ function parseArgs() {
 async function createDirectory() {
   return new Promise((resolve, reject) => {
     const currentDate = new Date();
-    const directoryName = `lighthouse-audit`;
+     const directoryName = `lighthouse-audit_${format(currentDate, "yyyy-MM-dd_HH-mm")}`.replace(/[^a-zA-Z0-9]/g, "_");
     try {
       fs.mkdirSync(directoryName)
       resolve(directoryName);
@@ -166,9 +166,9 @@ async function main() {
 
       // Save the reports as JSON files
       var filenameMobile = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.json`;
+        `${url.toLowerCase().replace("https://", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.json`;
       var filenameDesktop = 
-        `${url.toLowerCase().replace("https://www.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.json`;
+        `${url.toLowerCase().replace("https://", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.json`;
 
       fs.writeFileSync(filenameMobile, JSON.stringify(reportJSONMobile, null, 2));
       fs.writeFileSync(filenameDesktop, JSON.stringify(reportJSONDesktop, null, 2));
@@ -177,7 +177,7 @@ async function main() {
       filenameMobile = 
         `${url.toLowerCase().replace("https://", "").replace(/[^a-zA-Z0-9]/g, "_")}mobile.html`;
       filenameDesktop = 
-        `${url.toLowerCase().replace("https://.", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
+        `${url.toLowerCase().replace("https://", "").replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
 
 
       // Run Lighthouse with default settings
