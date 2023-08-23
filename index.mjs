@@ -7,6 +7,7 @@ import minimist from "minimist";
 import { parseString } from "xml2js";
 import { format } from "date-fns";
 import os from "os";
+import path from "path";
 
 async function isLighthouseInstalled() {
   return new Promise((resolve, reject) => {
@@ -18,40 +19,12 @@ async function isLighthouseInstalled() {
     });
   });
 }
-
-async function runLighthouseJSON(url, flags = []) {
+async function runLighthouse(url, outputPath, flags = []) {
   return new Promise((resolve, reject) => {
     const lighthouseProcess = spawn("lighthouse", [
       url,
       ...flags,
       "--output=json",
-      '--chrome-flags="--headless --disable-gpu"',
-    ]);
-
-    let lighthouseOutput = "";
-    lighthouseProcess.stdout.on("data", (data) => {
-      lighthouseOutput += data.toString();
-    });
-
-    lighthouseProcess.on("close", (code) => {
-      if (code === 0) {
-        try {
-          const report = JSON.parse(lighthouseOutput);
-          resolve(report);
-        } catch (error) {
-          reject(error);
-        }
-      } else {
-        reject(new Error(`Lighthouse process exited with code ${code}`));
-      }
-    });
-  });
-}
-async function runLighthouseHTML(url, outputPath, flags = []) {
-  return new Promise((resolve, reject) => {
-    const lighthouseProcess = spawn("lighthouse", [
-      url,
-      ...flags,
       "--output=html",
       "--output-path=" + outputPath,
       '--chrome-flags="--headless --disable-gpu"',
@@ -132,23 +105,54 @@ function createCSVWriter(csvPath) {
     ],
   });
 }
-function createSummaryRecord(report) {
+function createSummaryRecord(reportJSON) {
   return {
-    url: report.requestedUrl,
-    score_performance: report.categories.performance.score * 100,
-    score_accessibility: report.categories.accessibility.score * 100,
-    score_best_practices: report.categories["best-practices"].score * 100,
-    score_seo: report.categories.seo.score * 100,
-    score_pwa: report.categories.pwa.score * 100,
+    url: reportJSON.requestedUrl,
+    score_performance: reportJSON.categories.performance.score * 100,
+    score_accessibility: reportJSON.categories.accessibility.score * 100,
+    score_best_practices: reportJSON.categories["best-practices"].score * 100,
+    score_seo: reportJSON.categories.seo.score * 100,
+    score_pwa: reportJSON.categories.pwa.score * 100,
   };
 }
 
-function writeJSONReport(report, format) {
-  var filename = `${report.requestedUrl
-    .toLowerCase()
-    .replace("https://", "")
-    .replace(/[^a-zA-Z0-9]/g, "_")}${format}.json`;
-  fs.writeFileSync(filename, JSON.stringify(report, null, 2));
+async function parseJSONFile(file) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(file, "utf8", (readErr, data) => {
+      if (readErr) {
+        reject(new Error(`Error reading data for ${file}`, readErr));
+        return;
+      }
+      try {
+        const parsedData = JSON.parse(data);
+        resolve(parsedData);
+      } catch (parseError) {
+        reject(new Error(`Error parsing JSON for ${file}`, parseError));
+      }
+    });
+  });
+}
+async function buildSummaryData() {
+  const mobileSummary = [];
+  const desktopSummary = [];
+
+  try {
+    const files = await fs.promises.readdir(process.cwd());
+    for (const file of files) {
+      if (path.extname(file) === ".json") {
+        const jsonData = await parseJSONFile(file);
+        if (file.includes("mobile")) {
+          mobileSummary.push(createSummaryRecord(jsonData));
+        } else {
+          desktopSummary.push(createSummaryRecord(jsonData));
+        }
+      }
+    }
+    return { mobileSummary, desktopSummary };
+  } catch (err) {
+    console.error("Error reading directory or parsing JSON:", err);
+    return null;
+  }
 }
 async function main() {
   //check for lighthouse installation
@@ -171,53 +175,32 @@ async function main() {
   //create CSV Summary for Desktop
   const csvWriterDesktop = createCSVWriter("lighthouse-scores-desktop.csv");
 
-  var mobileSummary = [];
-  var desktopSummary = [];
-
   for (const url of urls) {
     try {
-      // Run Lighthouse for JSON with default settings
-      const reportJSONMobile = await runLighthouseJSON(url);
-
-      // Run Lighthouse for JSON with "--preset desktop" flag
-      const reportJSONDesktop = await runLighthouseJSON(url, [
-        "--preset desktop",
-      ]);
-
-      // Save the reports as JSON files
-      writeJSONReport(reportJSONMobile, "mobile");
-      writeJSONReport(reportJSONDesktop, "desktop");
-
-      // Create HTML filenames
       const filenameMobile = `${url
         .toLowerCase()
         .replace("https://", "")
-        .replace(/[^a-zA-Z0-9]/g, "_")}mobile.html`;
+        .replace(/[^a-zA-Z0-9]/g, "_")}_mobile`;
       const filenameDesktop = `${url
         .toLowerCase()
         .replace("https://", "")
-        .replace(/[^a-zA-Z0-9]/g, "_")}desktop.html`;
-
+        .replace(/[^a-zA-Z0-9]/g, "_")}_desktop`;
       // Run Lighthouse with default settings
-      await runLighthouseHTML(url, filenameMobile);
+      await runLighthouse(url, filenameMobile);
 
       // Run Lighthouse with "--preset desktop" flag
-      await runLighthouseHTML(url, filenameDesktop, ["--preset desktop"]);
-
-      //Create summaries from reports and add them the CSVs
-      mobileSummary.push(createSummaryRecord(reportJSONMobile));
-      desktopSummary.push(createSummaryRecord(reportJSONDesktop));
+      await runLighthouse(url, filenameDesktop, ["--preset desktop"]);
     } catch (error) {
       console.error(`Error running Lighthouse for ${url}:`, error);
     }
     console.log(`${url} Audit Complete`);
   }
-
+  const summaryData = await buildSummaryData();
   csvWriterMobile
-    .writeRecords(mobileSummary)
+    .writeRecords(summaryData.mobileSummary)
     .catch((error) => console.error(error));
   csvWriterDesktop
-    .writeRecords(desktopSummary)
+    .writeRecords(summaryData.desktopSummary)
     .catch((error) => console.error(error));
   console.log("Lighthouse audit complete for all URLs");
   // Restore the original working directory
