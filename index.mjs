@@ -20,15 +20,17 @@ async function isLighthouseInstalled() {
   });
 }
 async function runLighthouse(url, outputPath, flags = []) {
+  const commonFlags = [
+    url,
+    "--output=json",
+    "--output=html",
+    "--output-path=" + outputPath,
+    '--chrome-flags="--headless --disable-gpu"',
+  ];
+
+  const allFlags = [...commonFlags, ...flags];
   return new Promise((resolve, reject) => {
-    const lighthouseProcess = spawn("lighthouse", [
-      url,
-      ...flags,
-      "--output=json",
-      "--output=html",
-      "--output-path=" + outputPath,
-      '--chrome-flags="--headless --disable-gpu"',
-    ]);
+    const lighthouseProcess = spawn("lighthouse", allFlags);
 
     lighthouseProcess.on("close", (code) => {
       if (code === 0) {
@@ -189,7 +191,7 @@ async function main() {
       await runLighthouse(url, filenameMobile);
 
       // Run Lighthouse with "--preset desktop" flag
-      await runLighthouse(url, filenameDesktop, ["--preset desktop"]);
+      await runLighthouse(url, filenameDesktop, ["--preset", "desktop"]);
     } catch (error) {
       console.error(`Error running Lighthouse for ${url}:`, error);
     }
